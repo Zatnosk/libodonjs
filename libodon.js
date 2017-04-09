@@ -6,23 +6,26 @@
 		}
 
 		connect(server, username){
-			let connection_resolve, connection_reject;
+			let connection_resolve, connection_reject, registration;
 			connections.push(new Promise((resolve,reject)=>{
 				connection_resolve=resolve
 				connection_reject=reject
 			}))
 			active_connection = connections.length-1
 			return get_registration(server, this.appname, this.redirect_url)
-			.then(reg=>get_token(server, reg))
+			.then(reg=>{
+				registration = reg
+				return get_token(server, reg)
+			})
 			.then(
 			token=>{
 				connection_resolve({server:server,token:token})
 				return {result:'success'}
 			},
-			 error=>{
-			 	active_connection = undefined
-			 	connection_reject({error:'failed connection'})
-			 	return {result:'redirect',target:get_authorization_url(server, reg)}
+			error=>{
+				active_connection = undefined
+				connection_reject({error:'failed connection'})
+				return {result:'redirect',target:get_authorization_url(server, registration)}
 			})
 		}
 
@@ -137,7 +140,7 @@
 	}
 
 	function get_token(server, registration){
-		const token = localStorage.getItem(prefix+'_token')
+		const token = localStorage.getItem(prefix+'_token_'+server)
 		if(typeof token != 'string'){
 			const re_match = /[?&]code=([^&]+)/.exec(window.location.search)
 			if(!re_match){
@@ -163,7 +166,7 @@
 					if(log_errors) console.error(obj.error_description)
 					throw obj.error
 				}
-				localStorage.setItem(prefix+'_token',JSON.stringify(obj))
+				localStorage.setItem(prefix+'_token_'+server,JSON.stringify(obj))
 				return obj
 			})
 		} else {
@@ -181,12 +184,12 @@
 	}
 
 	function get_registration(server, appname, redirect_url){
-		const reg = localStorage.getItem(prefix+'_registration')
+		const reg = localStorage.getItem(prefix+'_registration_'+server)
 		if(typeof reg != 'string'){
 			if(log_actions) console.log('registering new app')
 			const promise = register_application(server, appname, redirect_url)
 			return promise.then(reg=>{
-				localStorage.setItem(prefix+'_registration',JSON.stringify(reg))
+				localStorage.setItem(prefix+'_registration_'+server,JSON.stringify(reg))
 				return reg
 			})
 		} else {
