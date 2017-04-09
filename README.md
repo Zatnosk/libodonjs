@@ -3,6 +3,10 @@ JavaScript library for interfacing with mastodon
 
 https://github.com/Gargron/mastodon/wiki/API
 
+# Notice
+
+This library isn't finished, and doesn't yet support posting to a mastodon instance.
+
 # Registering an app
 ```
 var app = new Libodon(app_name, redirect_url)
