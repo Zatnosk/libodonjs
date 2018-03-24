@@ -1,8 +1,9 @@
 (function(){
 	class Libodon {
-		constructor(appname, redirect_url){
+		constructor(appname, redirect_url, scope){
 			this.appname = appname
 			this.redirect_url = redirect_url
+			this.scope = scope
 		}
 
 		connect(server, username){
@@ -12,7 +13,7 @@
 				connection_reject=reject
 			}))
 			active_connection = connections.length-1
-			return get_registration(server, this.appname, this.redirect_url)
+			return get_registration(server, this)
 			.then(reg=>{
 				registration = reg
 				return get_token(server, reg)
@@ -73,6 +74,8 @@
 		block(id){return post_request('/api/v1/accounts/'+id+'/block')}
 		unblock(id){return post_request('/api/v1/accounts/'+id+'/unblock')}
 
+		use_errorlog(){log_errors=true}
+		use_actionlog(){log_actions=true}
 	}
 	this.Libodon = Libodon
 
@@ -80,8 +83,8 @@
 	let active_connection = undefined;
 
 	const prefix = 'libodon'
-	const log_errors = true
-	const log_actions = true
+	let log_errors = false
+	let log_actions = false
 
 	function timeline_options(options){
 		if(typeof options == 'object'){
@@ -176,18 +179,19 @@
 		
 	}
 
-	function get_authorization_url(server, registration){
+	function get_authorization_url(server, registration, libodon){
 		let endpoint = server+'/oauth/authorize?response_type=code'
 		endpoint += '&client_id='+registration.client_id
 		endpoint += '&redirect_uri='+registration.redirect_uri
+		if(libodon.scope) endpoint += '&'+encodeURI(libodon.scope)
 		return endpoint
 	}
 
-	function get_registration(server, appname, redirect_url){
+	function get_registration(server, libodon){
 		const reg = localStorage.getItem(prefix+'_registration_'+server)
 		if(typeof reg != 'string'){
 			if(log_actions) console.log('registering new app')
-			const promise = register_application(server, appname, redirect_url)
+			const promise = register_application(server, libodon)
 			return promise.then(reg=>{
 				localStorage.setItem(prefix+'_registration_'+server,JSON.stringify(reg))
 				return reg
@@ -198,12 +202,13 @@
 		}
 	}
 
-	function register_application(server, appname, redirect_url){
+	function register_application(server, libodon){
 		const endpoint = server+'/api/v1/apps'
 		const data = new URLSearchParams()
 		data.set('response_type','code')
-		data.set('client_name',appname)
-		data.set('redirect_uris',redirect_url)
+		data.set('client_name',libodon.appname)
+		data.set('redirect_uris',libodon.redirect_url)
+		data.set('scopes',libodon.scope)
 		const fetchInit = {
 			method:'POST',
 			mode:'cors',
