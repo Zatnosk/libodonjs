@@ -26,7 +26,7 @@
 			error=>{
 				active_connection = undefined
 				connection_reject({error:'failed connection'})
-				return {result:'redirect',target:get_authorization_url(server, registration)}
+				return {result:'redirect',target:get_authorization_url(server, registration, this)}
 			})
 		}
 
@@ -183,7 +183,7 @@
 		let endpoint = server+'/oauth/authorize?response_type=code'
 		endpoint += '&client_id='+registration.client_id
 		endpoint += '&redirect_uri='+registration.redirect_uri
-		if(libodon.scope) endpoint += '&'+encodeURI(libodon.scope)
+		if(libodon.scope) endpoint += '&scope='+encodeURI(libodon.scope)
 		return endpoint
 	}
 
