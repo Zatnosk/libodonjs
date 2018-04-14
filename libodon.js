@@ -92,6 +92,8 @@
 			if(options.max_id) params.push('max_id='+options.max_id)
 			if(options.since_id) params.push('since_id='+options.since_id)
 			if(options.limit) params.push('limit='+options.limit)
+			if(options.only_media) params.push('only_media')
+			if(options.local) params.push('local')
 			if(params.length) return '?'+params.join('&')
 		}
 		return ''
